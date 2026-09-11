@@ -10,7 +10,6 @@ struct MenuBarView: View {
     @State private var toast: Toast?
     @State private var dropTargetID: UUID?
     
-    private let visibleRowCount = 4
     private let rowHeight: CGFloat = 48
     
     private struct Toast: Identifiable {
@@ -34,27 +33,28 @@ struct MenuBarView: View {
                 SettingsView(onClose: closePresented)
             }
         }
+        .frame(width: DS.Layout.pageWidth, height: DS.Layout.pageHeight)
         .background(DS.Colors.bg)
         .background(MenuBarWindowAccessor())
     }
     
     private var mainContent: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            GradientHeader(title: "DNS Widget", icon: "network")
+        VStack(spacing: 0) {
+            PageHeader(title: "DNS Widget", icon: "network", showBack: false)
             
             GradientDivider()
             
             serverList
-            
-            GradientDivider()
-            
-            footerBar
         }
-        .frame(width: 360)
+        .overlay(alignment: .bottom) {
+            FooterIsland {
+                footerBar
+            }
+        }
         .overlay(alignment: .top) {
             if let toast = toast {
                 ToastMessage(text: toast.message, isError: toast.isError)
-                    .padding(.top, DS.Spacing.sm)
+                    .padding(.top, 44)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
@@ -74,24 +74,6 @@ struct MenuBarView: View {
             case .addServer: return "addServer"
             case .editServer(let server): return "editServer-\(server.id)"
             case .settings: return "settings"
-            }
-        }
-    }
-    
-    private struct ScrollableIfNeeded: ViewModifier {
-        let count: Int
-        let visibleRows: Int
-        let rowHeight: CGFloat
-        
-        @ViewBuilder
-        func body(content: Content) -> some View {
-            if count > visibleRows {
-                ScrollView {
-                    content
-                }
-                .frame(height: CGFloat(visibleRows) * rowHeight)
-            } else {
-                content
             }
         }
     }
@@ -117,14 +99,17 @@ struct MenuBarView: View {
     // MARK: - Server List
     
     private var serverList: some View {
-        VStack(spacing: 2) {
-            ForEach(displayServers) { server in
-                DNSRow(server)
+        ThinScrollView {
+            VStack(spacing: 2) {
+                ForEach(displayServers) { server in
+                    DNSRow(server)
+                }
             }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.top, DS.Spacing.sm)
+            .padding(.bottom, 64)
         }
-        .modifier(ScrollableIfNeeded(count: displayServers.count, visibleRows: visibleRowCount, rowHeight: rowHeight))
-        .padding(.horizontal, DS.Spacing.sm)
-        .padding(.vertical, DS.Spacing.xs)
+        .frame(maxHeight: .infinity)
     }
     
     private var displayServers: [DNSServer] {
@@ -165,13 +150,11 @@ struct MenuBarView: View {
                 presented = .settings
             }
             
-            IconButton(icon: "arrow.clockwise") {
-                withAnimation(.spring(response: 0.4)) {
-                    network.refresh()
-                }
+            IconButton(icon: "power", color: DS.Colors.danger) {
+                quitApp()
             }
+            .help("Reset DNS to automatic and quit")
         }
-        .padding(DS.Spacing.md)
     }
     
     // MARK: - DNS Row (inline)
@@ -247,5 +230,11 @@ struct MenuBarView: View {
                 toast = nil
             }
         }
+    }
+    
+    private func quitApp() {
+        network.removeAllAndReset()
+        WidgetDataManager.shared.syncFromNetwork(network: network, storage: storage)
+        NSApp.terminate(nil)
     }
 }

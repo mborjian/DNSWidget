@@ -34,8 +34,6 @@ final class NetworkService: ObservableObject, @unchecked Sendable {
         }
     }
     
-    /// Re-applies the last chosen DNS silently, so a reboot or network change
-    /// doesn't lose the setting or trigger an admin prompt.
     func restoreLastApplied() {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self else { return }
@@ -118,9 +116,14 @@ final class NetworkService: ObservableObject, @unchecked Sendable {
         return success
     }
     
-    /// Applies DNS through the SystemConfiguration runtime store — no admin
-    /// prompt. Falls back to networksetup (which may ask for permission) only
-    /// when the runtime store is unavailable.
+    func removeAllAndReset() {
+        for service in getNetworkServices() {
+            _ = applyDNSServers([], for: service)
+        }
+        persistAppliedServers([])
+        currentDNS = []
+    }
+    
     private func applyDNSServers(_ servers: [String], for service: String) -> Bool {
         if let store = SCDynamicStoreCreate(nil, "com.dnswidget" as CFString, nil, nil),
            let serviceID = primaryServiceID(store) {

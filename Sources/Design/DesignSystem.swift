@@ -61,6 +61,11 @@ enum DS {
         static let xxl: CGFloat = 28
     }
     
+    enum Layout {
+        static let pageWidth: CGFloat = 360
+        static let pageHeight: CGFloat = 408
+    }
+    
     // MARK: Corner Radii
     enum Radius {
         static let sm: CGFloat = 6

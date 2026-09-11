@@ -24,26 +24,27 @@ struct AddEditDNSView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            header
+            PageHeader(title: isEditing ? "Edit DNS Server" : "New DNS Server", icon: isEditing ? "pencil" : "plus", onClose: onClose)
             
             Divider().overlay(DS.Colors.border)
             
-            ScrollView {
+            ThinScrollView {
                 VStack(spacing: DS.Spacing.lg) {
                     nameField
                     dnsFields
                     colorPicker
                 }
-                .padding(DS.Spacing.lg)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.lg)
+                .padding(.bottom, 72)
             }
             .background(DS.Colors.bg)
-            
-            Divider().overlay(DS.Colors.border)
-            
+        }
+        .frame(width: DS.Layout.pageWidth, height: DS.Layout.pageHeight)
+        .background(DS.Colors.bg)
+        .overlay(alignment: .bottom) {
             footer
         }
-        .frame(width: 360, height: 520)
-        .background(DS.Colors.bg)
         .onExitCommand {
             onClose()
         }
@@ -72,43 +73,6 @@ struct AddEditDNSView: View {
                 selectedColor = server.color
             }
         }
-    }
-    
-    // MARK: - Header
-    
-    private var header: some View {
-        HStack {
-            ZStack {
-                Circle()
-                    .fill(DS.Colors.accentGradient)
-                    .frame(width: 32, height: 32)
-                Image(systemName: isEditing ? "pencil.circle.fill" : "plus.circle.fill")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
-            }
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(isEditing ? "Edit DNS Server" : "New DNS Server")
-                    .font(DS.Font.title)
-                    .foregroundStyle(DS.Colors.text)
-                Text(isEditing ? "Update server configuration" : "Add a custom DNS resolver")
-                    .font(DS.Font.caption)
-                    .foregroundStyle(DS.Colors.textTertiary)
-            }
-            
-            Spacer()
-            
-            Button(action: { onClose() }) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(DS.Colors.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .background(Circle().fill(DS.Colors.card))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(DS.Spacing.lg)
-        .background(DS.Colors.bgElevated)
     }
     
     // MARK: - Name Field
@@ -214,27 +178,23 @@ struct AddEditDNSView: View {
                 .font(DS.Font.caption)
                 .foregroundStyle(DS.Colors.textTertiary)
             
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: DS.Spacing.sm), count: 4),
-                spacing: DS.Spacing.sm
-            ) {
+            HStack(spacing: DS.Spacing.sm) {
                 ForEach(DNSColor.allCases, id: \.self) { color in
                     ZStack {
                         Circle()
                             .fill(color.gradient)
-                            .frame(width: 32, height: 32)
-                            .shadow(color: selectedColor == color ? color.color.opacity(0.5) : .clear, radius: 6)
+                            .frame(width: 20, height: 20)
+                            .shadow(color: selectedColor == color ? color.color.opacity(0.5) : .clear, radius: 5)
                         
                         if selectedColor == color {
                             Circle()
-                                .stroke(.white, lineWidth: 2)
-                                .frame(width: 32, height: 32)
+                                .stroke(.white, lineWidth: 1.5)
+                                .frame(width: 20, height: 20)
                             Image(systemName: "checkmark")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.system(size: 7, weight: .bold))
                                 .foregroundStyle(.white)
                         }
                     }
-                    .frame(maxWidth: .infinity)
                     .onTapGesture {
                         withAnimation(.spring(response: 0.3)) {
                             selectedColor = color
@@ -248,60 +208,28 @@ struct AddEditDNSView: View {
     // MARK: - Footer
     
     private var footer: some View {
-        HStack {
-            if isEditing, let server = editing, !server.isPreset {
-                Button(action: { showDeleteConfirm = true }) {
-                    HStack(spacing: DS.Spacing.xs) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 10))
-                        Text("Delete")
-                            .font(DS.Font.caption)
+        FooterIsland {
+            HStack(spacing: DS.Spacing.sm) {
+                if isEditing, let server = editing, !server.isPreset {
+                    PillButton(title: "Delete", icon: "trash", color: DS.Colors.danger) {
+                        showDeleteConfirm = true
                     }
-                    .foregroundStyle(DS.Colors.danger)
-                    .padding(.horizontal, DS.Spacing.sm + 2)
-                    .padding(.vertical, DS.Spacing.xs + 2)
-                    .background(DS.Colors.danger.opacity(0.1))
-                    .clipShape(Capsule())
                 }
-                .buttonStyle(.plain)
-            }
-            
-            Spacer()
-            
-            Button("Cancel") { onClose() }
-                .keyboardShortcut(.cancelAction)
-                .font(DS.Font.body)
-                .foregroundStyle(DS.Colors.textSecondary)
-                .padding(.horizontal, DS.Spacing.md)
-                .padding(.vertical, DS.Spacing.sm)
-                .background(DS.Colors.card)
-                .clipShape(Capsule())
-                .buttonStyle(.plain)
-            
-            Button(action: save) {
-                HStack(spacing: DS.Spacing.xs) {
-                    Image(systemName: isEditing ? "checkmark" : "plus")
-                        .font(.system(size: 10, weight: .bold))
-                    Text(isEditing ? "Save Changes" : "Add Server")
-                        .font(DS.Font.headline)
+                
+                Spacer()
+                
+                PillButton(
+                    title: isEditing ? "Save Changes" : "Add Server",
+                    icon: isEditing ? "checkmark" : "plus",
+                    color: DS.Colors.accent,
+                    isDefault: true
+                ) {
+                    save()
                 }
-                .foregroundStyle(.white)
-                .padding(.horizontal, DS.Spacing.md)
-                .padding(.vertical, DS.Spacing.sm)
-                .background(
-                    Capsule()
-                        .fill(isValid ? DS.Colors.accentGradient : LinearGradient(
-                            colors: [Color.gray.opacity(0.3), Color.gray.opacity(0.2)],
-                            startPoint: .leading, endPoint: .trailing
-                        ))
-                )
+                .opacity(isValid ? 1 : 0.4)
+                .disabled(!isValid)
             }
-            .keyboardShortcut(.defaultAction)
-            .buttonStyle(.plain)
-            .disabled(!isValid)
         }
-        .padding(DS.Spacing.lg)
-        .background(DS.Colors.bgElevated)
     }
     
     // MARK: - Validation

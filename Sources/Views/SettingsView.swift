@@ -9,7 +9,7 @@ struct SettingsView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            header
+            PageHeader(title: "Settings", icon: "gearshape.fill", onClose: onClose)
             
             Divider().overlay(DS.Colors.border)
             
@@ -19,7 +19,7 @@ struct SettingsView: View {
             
             WiFiAutoSwitchView()
         }
-        .frame(width: 360, height: 520)
+        .frame(width: DS.Layout.pageWidth, height: DS.Layout.pageHeight)
         .background(DS.Colors.bg)
         .onExitCommand {
             onClose()
@@ -30,43 +30,6 @@ struct SettingsView: View {
                 (NSApp.keyWindow ?? NSApp.windows.first(where: { $0.isVisible }))?.makeKey()
             }
         }
-    }
-    
-    // MARK: - Header
-    
-    private var header: some View {
-        HStack {
-            ZStack {
-                Circle()
-                    .fill(LinearGradient(colors: [.gray, .gray.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 32, height: 32)
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
-            }
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Settings")
-                    .font(DS.Font.title)
-                    .foregroundStyle(DS.Colors.text)
-                Text("Launch behavior and Wi-Fi rules")
-                    .font(DS.Font.caption)
-                    .foregroundStyle(DS.Colors.textTertiary)
-            }
-            
-            Spacer()
-            
-            Button(action: { onClose() }) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(DS.Colors.textSecondary)
-                    .frame(width: 28, height: 28)
-                    .background(Circle().fill(DS.Colors.card))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(DS.Spacing.lg)
-        .background(DS.Colors.bgElevated)
     }
     
     // MARK: - Launch at Login

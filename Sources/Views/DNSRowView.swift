@@ -16,7 +16,6 @@ struct DNSRowView: View {
             RoundedRectangle(cornerRadius: 2)
                 .fill(server.color.gradient)
                 .frame(width: 3, height: 36)
-                .padding(.leading, DS.Spacing.xs)
             
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: DS.Spacing.xs) {
@@ -43,6 +42,7 @@ struct DNSRowView: View {
                     }
                 }
             }
+            .padding(.leading, DS.Spacing.sm)
             
             Spacer()
             
@@ -67,7 +67,7 @@ struct DNSRowView: View {
             .offset(x: isHovered ? 0 : 8)
             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isHovered)
         }
-        .padding(.horizontal, DS.Spacing.sm)
+        .padding(.trailing, DS.Spacing.sm)
         .padding(.vertical, DS.Spacing.xs + 1)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)
@@ -98,7 +98,7 @@ struct DNSRowView: View {
     
     private var rowBackground: Color {
         if isActive { return Color.green.opacity(0.12) }
-        if server.isPinned { return Color.white.opacity(0.07) }
+        if server.isPinned { return Color.white.opacity(0.04) }
         if isHovered { return DS.Colors.cardHover }
         return Color.clear
     }
