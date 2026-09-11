@@ -24,6 +24,7 @@ struct FooterIsland<Content: View>: View {
 
 // MARK: - Thin Scroll View
 
+@MainActor
 struct ThinScrollView<Content: View>: View {
     @ViewBuilder let content: Content
     
