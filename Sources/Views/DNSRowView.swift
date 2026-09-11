@@ -86,8 +86,10 @@ struct DNSRowView: View {
                 isPressed = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
-                    isPressed = false
+                MainActor.assumeIsolated {
+                    withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                        isPressed = false
+                    }
                 }
             }
             onSelect()

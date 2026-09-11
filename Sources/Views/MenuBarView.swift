@@ -226,8 +226,10 @@ struct MenuBarView: View {
             toast = Toast(message: message, isError: isError)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-            withAnimation(.spring(response: 0.3)) {
-                toast = nil
+            MainActor.assumeIsolated {
+                withAnimation(.spring(response: 0.3)) {
+                    toast = nil
+                }
             }
         }
     }

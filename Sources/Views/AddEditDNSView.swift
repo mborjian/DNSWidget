@@ -62,8 +62,10 @@ struct AddEditDNSView: View {
         .onAppear {
             NSApp.activate(ignoringOtherApps: true)
             DispatchQueue.main.async {
-                (NSApp.keyWindow ?? NSApp.windows.first(where: { $0.isVisible }))?.makeKey()
-                isNameFocused = true
+                MainActor.assumeIsolated {
+                    (NSApp.keyWindow ?? NSApp.windows.first(where: { $0.isVisible }))?.makeKey()
+                    isNameFocused = true
+                }
             }
             
             if let server = editing {

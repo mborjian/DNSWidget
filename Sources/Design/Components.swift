@@ -24,7 +24,6 @@ struct FooterIsland<Content: View>: View {
 
 // MARK: - Thin Scroll View
 
-@MainActor
 struct ThinScrollView<Content: View>: View {
     @ViewBuilder let content: Content
     
@@ -49,9 +48,15 @@ struct ThinScrollView<Content: View>: View {
                 Color.clear.preference(key: ScrollViewportKey.self, value: geo.size.height)
             }
         )
-        .onPreferenceChange(ScrollContentHeightKey.self) { contentHeight = $0 }
-        .onPreferenceChange(ScrollViewportKey.self) { viewportHeight = $0 }
-        .onPreferenceChange(ScrollOffsetKey.self) { offset = $0 }
+        .onPreferenceChange(ScrollContentHeightKey.self) { value in
+            MainActor.assumeIsolated { contentHeight = value }
+        }
+        .onPreferenceChange(ScrollViewportKey.self) { value in
+            MainActor.assumeIsolated { viewportHeight = value }
+        }
+        .onPreferenceChange(ScrollOffsetKey.self) { value in
+            MainActor.assumeIsolated { offset = value }
+        }
         .scrollIndicators(.never)
         .overlay(alignment: .trailing) { indicator }
     }
