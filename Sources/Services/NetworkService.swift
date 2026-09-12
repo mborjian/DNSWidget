@@ -17,7 +17,6 @@ final class NetworkService: ObservableObject, @unchecked Sendable {
         refresh()
     }
     
-    // MARK: - Refresh
     
     func refresh() {
         isLoading = true
@@ -31,6 +30,7 @@ final class NetworkService: ObservableObject, @unchecked Sendable {
                 self.activeService = primary
                 self.currentDNS = actual
                 self.isLoading = false
+                WidgetDataManager.shared.syncFromNetwork(network: self, storage: StorageService.shared)
             }
         }
     }
