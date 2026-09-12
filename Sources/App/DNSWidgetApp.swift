@@ -36,6 +36,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         NetworkService.shared.restoreLastApplied()
         WiFiMonitor.shared.startMonitoring()
+        WidgetCommandBridge.shared.start()
     }
     
     func applicationWillTerminate(_ notification: Notification) {

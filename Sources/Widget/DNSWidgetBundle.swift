@@ -10,16 +10,13 @@ struct DNSWidgetBundle: WidgetBundle {
 
 struct DNSStatusWidget: Widget {
     let kind: String = "DNSStatusWidget"
-    
+
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: DNSWidgetProvider()) { entry in
             DNSWidgetEntryView(entry: entry)
-                .containerBackground(for: .widget) {
-                    Color.black
-                }
         }
         .configurationDisplayName("DNS Status")
-        .description("Shows your active DNS resolver and connection details.")
+        .description("See which DNS you're using and switch it with a tap.")
         .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
     }
 }

@@ -53,12 +53,23 @@ final class NetworkService: ObservableObject, @unchecked Sendable {
             let servers = self.readAppliedServers()
             guard !servers.isEmpty else { return }
             let service = self.getPrimaryService(from: self.getNetworkServices())
+
+            guard WidgetDataManager.shared.pendingCommand() == nil else { return }
+
+            if let configured = self.persistentDNSServers(for: service), configured != servers {
+                #if DEBUG
+                print("[NetworkService] DNS for \"\(service)\" was set outside the app "
+                      + "(\(configured.joined(separator: ", "))); not overriding it")
+                #endif
+                self.refreshCurrentDNS()
+                return
+            }
+
             _ = self.applyDNSServers(servers, for: service)
             self.refreshCurrentDNS(after: 0.4)
         }
     }
     
-    // MARK: - Network Services
     
     func getNetworkServices() -> [String] {
         let output = runCommand(networksetupPath, ["-listallnetworkservices"])
@@ -69,7 +80,7 @@ final class NetworkService: ObservableObject, @unchecked Sendable {
             .map { $0.trimmingCharacters(in: .whitespaces) }
     }
     
-    private func getPrimaryService(from services: [String]) -> String {
+    func getPrimaryService(from services: [String]) -> String {
         let store = makeStore()
         let primary = primaryState(store)
         
@@ -124,7 +135,6 @@ final class NetworkService: ObservableObject, @unchecked Sendable {
         networkServiceEntries().first { $0.name == name }?.id
     }
     
-    // MARK: - DNS Operations
     
     func setDNS(_ server: DNSServer, for service: String) -> Bool {
         let success = applyDNSServers(server.servers, for: service)
@@ -176,7 +186,14 @@ final class NetworkService: ObservableObject, @unchecked Sendable {
         return result.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
-    // MARK: - Resolver State
+
+    func resolvedServers() -> [String] {
+        resolvedDNSServers(makeStore())
+    }
+
+    func configuredServers(for service: String) -> [String]? {
+        persistentDNSServers(for: service)
+    }
     
     private func primaryState(_ store: SCDynamicStore?) -> (serviceID: String?, interface: String?) {
         guard let store,
@@ -206,6 +223,13 @@ final class NetworkService: ObservableObject, @unchecked Sendable {
         return dict["ServerAddresses"] as? [String]
     }
     
+    private func persistentDNSServers(for service: String) -> [String]? {
+        guard let store = makeStore(), let id = serviceID(for: service) else { return nil }
+        guard let servers = serverAddresses(store, at: "Setup:/Network/Service/\(id)/DNS"),
+              !servers.isEmpty else { return nil }
+        return servers
+    }
+    
     private func persistAppliedServers(_ servers: [String]) {
         UserDefaults.standard.set(servers, forKey: appliedServersKey)
     }
@@ -214,7 +238,6 @@ final class NetworkService: ObservableObject, @unchecked Sendable {
         UserDefaults.standard.stringArray(forKey: appliedServersKey) ?? []
     }
     
-    // MARK: - Helpers
     
     private func runCommand(_ executable: String, _ arguments: [String]) -> String {
         let process = Process()
@@ -253,13 +276,46 @@ extension WidgetDataManager {
     func syncFromNetwork(network: NetworkService, storage: StorageService) {
         let currentServer = network.getCurrentDNSServer()
         let data = SharedWidgetData(
-            activeDNSName: currentServer?.name ?? "ISP Default",
+            activeDNSName: currentServer?.name ?? "Automatic",
+            activeServerID: currentServer?.id.uuidString,
             primaryDNS: network.currentDNS.first ?? "",
             secondaryDNS: network.currentDNS.count > 1 ? network.currentDNS[1] : "",
             networkService: network.activeService,
             lastUpdated: Date(),
-            colorName: currentServer?.color.rawValue ?? "gray"
+            colorName: currentServer?.color.rawValue ?? "gray",
+            isAutomatic: currentServer == nil,
+            servers: Self.widgetServers(storage: storage, active: currentServer),
+            applyingServerID: nil,
+            applyingSince: nil,
+            lastError: WidgetCommandBridge.shared.errorMessage
         )
-        save(data)
+        if save(data) {
+            reloadWidgets()
+        }
+    }
+
+    private static func widgetServers(storage: StorageService, active: DNSServer?) -> [SharedDNSServer] {
+        let all = storage.allServers()
+        var ordered = all.filter(\.isPinned)
+        if let active, !ordered.contains(where: { $0.id == active.id }) {
+            ordered.append(active)
+        }
+        ordered += all.filter { !$0.isPinned }
+
+        var seen = Set<UUID>()
+        var result: [SharedDNSServer] = []
+        for server in ordered where seen.insert(server.id).inserted {
+            result.append(
+                SharedDNSServer(
+                    id: server.id.uuidString,
+                    name: server.name,
+                    primaryDNS: server.primaryDNS,
+                    secondaryDNS: server.secondaryDNS,
+                    colorName: server.color.rawValue
+                )
+            )
+            if result.count == 12 { break }
+        }
+        return result
     }
 }

@@ -55,10 +55,10 @@ Latency is measured with `ping`, and when you join a Wi-Fi network the app detec
 
 ## Releases
 
-Push a tag like `v1.0.0` (or run the workflow manually from the Actions tab) and GitHub Actions builds a release `.zip` and attaches it to a GitHub Release. The version number is taken from the tag itself, so `v2.3.4` ships as version 2.3.4. Every push and pull request is also built by a separate CI check so problems surface before you tag.
+Push a tag like `v1.0.0` (or run the workflow manually from the Actions tab) and GitHub Actions builds a release disk image, `DNSWidget-macOS.dmg`, and attaches it to a GitHub Release. Opening it gives a window with the app and an **Applications** shortcut side by side — drag the app onto the shortcut and it's installed. The version number is taken from the tag itself, so `v2.3.4` ships as version 2.3.4. Every push and pull request is also built by a separate CI check so problems surface before you tag.
 
 - **Without an Apple Developer account** — the build is ad-hoc signed, so macOS may ask you to right-click the app and choose Open the first time.
-- **With an Apple Developer account** — add the secrets below and releases are signed with your Developer ID certificate and notarized by Apple, so there's no warning at all:
+- **With an Apple Developer account** — add the secrets below and releases are signed with your Developer ID certificate and notarized by Apple, so there's no warning at all. Both the app and the disk image it ships in are notarized and stapled:
 
 | Secret | Value |
 | --- | --- |
